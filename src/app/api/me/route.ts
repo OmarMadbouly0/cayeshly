@@ -11,6 +11,7 @@ export async function GET(request: Request) {
         id: user.id,
         name: user.name,
         phoneNumber: user.phoneNumber,
+        onboarded: user.onboarded,
       },
     });
   } catch (error) {

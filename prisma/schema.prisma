@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -9,25 +8,38 @@ datasource db {
 }
 
 model User {
-  id            String    @id
-  name          String
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-
+  id                  String    @id
+  name                String
+  email               String
+  emailVerified       Boolean   @default(false)
+  image               String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  sessions            Session[]
+  accounts            Account[]
+  onboarded           Boolean   @default(false)
   phoneNumber         String?
   phoneNumberVerified Boolean?
+  pinHash             String?
+  pinFailedAttempts   Int       @default(0)
+  pinLockedUntil      DateTime?
 
-  twoFactorEnabled Boolean?    @default(false)
-  twofactors       TwoFactor[]
+  wallet Wallet?
 
   @@unique([email])
-  @@map("user")
   @@unique([phoneNumber])
+  @@map("user")
+}
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  balance   Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("wallet")
 }
 
 model Session {
@@ -76,19 +88,4 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
-}
-
-model TwoFactor {
-  id                      String    @id
-  secret                  String
-  backupCodes             String
-  userId                  String
-  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  verified                Boolean?  @default(true)
-  failedVerificationCount Int?      @default(0)
-  lockedUntil             DateTime?
-
-  @@index([secret])
-  @@index([userId])
-  @@map("twoFactor")
 }
