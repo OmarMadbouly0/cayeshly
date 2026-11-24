@@ -4,7 +4,7 @@ export const userRepository = {
   async lockById(tx: Prisma.TransactionClient, userId: string) {
     await tx.$queryRaw`
       SELECT "id"
-      FROM "user"
+      FROM "users"
       WHERE "id" = ${userId}
       FOR UPDATE
     `;

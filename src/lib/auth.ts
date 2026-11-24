@@ -15,6 +15,12 @@ export const auth = betterAuth({
         defaultValue: false,
         input: false,
       },
+      role: {
+        type: ["user", "admin"],
+        required: false,
+        defaultValue: "user",
+        input: false,
+      },
     },
   },
   plugins: [
