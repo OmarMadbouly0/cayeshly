@@ -2,6 +2,7 @@ import { walletRepository } from "@/repositories/wallet.repository";
 import { NotFoundError } from "@/shared/errors/application-error";
 import { pageResult } from "@/shared/pagination";
 import type { PaginationInput } from "@/shared/validation/pagination.schema";
+import { WalletDepositInput } from "./wallet.schemas";
 
 export const walletService = {
   async getWalletByUserId(userId: string) {
@@ -21,5 +22,16 @@ export const walletService = {
     );
 
     return pageResult(items, total, pagination.page, pagination.pageSize);
+  },
+
+  async walletDeposit(userId: string, input: WalletDepositInput) {
+    const wallet = await walletService.getWalletByUserId(userId);
+
+    const transaction = await walletRepository.depositRequest(
+      wallet.id,
+      input.amount,
+    );
+
+    return transaction;
   },
 };

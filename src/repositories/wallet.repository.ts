@@ -1,4 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
+import { Decimal } from "@/generated/prisma/internal/prismaNamespace";
 import prisma from "@/lib/prisma";
 import { pageArgs } from "@/shared/pagination";
 import type { PaginationInput } from "@/shared/validation/pagination.schema";
@@ -38,6 +39,7 @@ export const walletRepository = {
           id: true,
           amount: true,
           type: true,
+          status: true,
           created_at: true,
         },
         orderBy: [{ created_at: "desc" }, { id: "desc" }],
@@ -46,5 +48,21 @@ export const walletRepository = {
     ]);
 
     return { items, total };
+  },
+  async depositRequest(walletId: number, amount: Decimal) {
+    return prisma.walletTransaction.create({
+      data: {
+        wallet_id: walletId,
+        amount,
+        type: "deposit",
+      },
+      select: {
+        id: true,
+        amount: true,
+        type: true,
+        status: true,
+        created_at: true,
+      },
+    });
   },
 };

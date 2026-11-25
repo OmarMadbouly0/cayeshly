@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Decimal } from "@/generated/prisma/internal/prismaNamespace";
 
 export function requiredString(label: string, max: number, min = 1) {
   return z
@@ -44,6 +45,21 @@ export function requiredNumber(label: string, min: number, max: number) {
     )
     .max(max, `${label} must not exceed ${max}.`)
     .multipleOf(0.01, `${label} must have at most two decimal places.`);
+}
+
+export function requiredAmount(label: string, min: number, max: number) {
+  return z
+    .string(`${label} must be a valid amount.`)
+    .trim()
+    .regex(
+      /^-?\d+(\.\d{1,2})?$/,
+      `${label} must be a decimal amount with at most two decimal places.`,
+    )
+    .transform((amount) => new Decimal(amount))
+    .refine(
+      (amount) => amount.gte(min) && amount.lte(max),
+      `${label} must be between ${min} and ${max}.`,
+    );
 }
 
 export function requiredId(label: string) {
