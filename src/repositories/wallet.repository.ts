@@ -3,7 +3,7 @@ import { Decimal } from "@/generated/prisma/internal/prismaNamespace";
 import prisma from "@/lib/prisma";
 import { pageArgs } from "@/shared/pagination";
 import type { PaginationInput } from "@/shared/validation/pagination.schema";
-
+import type { WalletTransactionStatus } from "@/generated/prisma/enums";
 export const walletRepository = {
   async create(tx: Prisma.TransactionClient, userId: string) {
     return tx.wallet.create({
@@ -13,6 +13,23 @@ export const walletRepository = {
         balance: true,
       },
     });
+  },
+  async lockTransactionById(tx: Prisma.TransactionClient, id: number) {
+    await tx.$queryRaw`
+    SELECT "id"
+    FROM "wallet_transactions"
+    WHERE "id" = ${id}
+    FOR UPDATE
+  `;
+  },
+
+  async lockWalletById(tx: Prisma.TransactionClient, id: number) {
+    await tx.$queryRaw`
+    SELECT "id"
+    FROM "wallets"
+    WHERE "id" = ${id}
+    FOR UPDATE
+  `;
   },
   async getWalletByUserId(userId: string) {
     return prisma.wallet.findUnique({
@@ -62,6 +79,67 @@ export const walletRepository = {
         type: true,
         status: true,
         created_at: true,
+      },
+    });
+  },
+  async getTransactionById(
+    transactionId: number,
+    tx: Prisma.TransactionClient = prisma,
+  ) {
+    return tx.walletTransaction.findUnique({
+      where: { id: transactionId },
+      select: {
+        id: true,
+        wallet_id: true,
+        amount: true,
+        type: true,
+        status: true,
+        created_at: true,
+      },
+    });
+  },
+
+  async updateTransactionStatus(
+    tx: Prisma.TransactionClient,
+    transactionId: number,
+    status: Exclude<WalletTransactionStatus, "pending">,
+  ) {
+    return tx.walletTransaction.update({
+      where: { id: transactionId, status: "pending" },
+      data: { status },
+    });
+  },
+
+  async creditBalance(
+    tx: Prisma.TransactionClient,
+    walletId: number,
+    amount: Decimal,
+  ) {
+    return tx.wallet.update({
+      where: { id: walletId },
+      data: { balance: { increment: amount } },
+    });
+  },
+
+  async debitBalance(
+    tx: Prisma.TransactionClient,
+    walletId: number,
+    amount: Decimal,
+  ) {
+    return tx.wallet.updateMany({
+      where: {
+        id: walletId,
+        balance: { gte: amount },
+      },
+      data: { balance: { decrement: amount } },
+    });
+  },
+  async getWalletById(walletId: number, tx: Prisma.TransactionClient = prisma) {
+    return tx.wallet.findUnique({
+      where: { id: walletId },
+      select: {
+        id: true,
+        balance: true,
       },
     });
   },
