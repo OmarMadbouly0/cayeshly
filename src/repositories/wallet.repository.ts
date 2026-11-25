@@ -23,7 +23,7 @@ export const walletRepository = {
     });
   },
   async getTransactionsByWalletId(
-    walletId: string,
+    walletId: number,
     { page, pageSize }: PaginationInput,
   ) {
     const where = { wallet_id: walletId };
