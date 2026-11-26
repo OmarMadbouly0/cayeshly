@@ -31,8 +31,11 @@ export const walletRepository = {
     FOR UPDATE
   `;
   },
-  async getWalletByUserId(userId: string) {
-    return prisma.wallet.findUnique({
+  async getWalletByUserId(
+    userId: string,
+    tx: Prisma.TransactionClient = prisma,
+  ) {
+    return tx.wallet.findUnique({
       where: { userId },
       select: {
         id: true,
@@ -66,12 +69,17 @@ export const walletRepository = {
 
     return { items, total };
   },
-  async depositRequest(walletId: number, amount: Decimal) {
-    return prisma.walletTransaction.create({
+  async createTransactionRequest(
+    walletId: number,
+    amount: Decimal,
+    type: "deposit" | "withdrawal",
+    tx: Prisma.TransactionClient,
+  ) {
+    return tx.walletTransaction.create({
       data: {
         wallet_id: walletId,
         amount,
-        type: "deposit",
+        type,
       },
       select: {
         id: true,
@@ -81,6 +89,13 @@ export const walletRepository = {
         created_at: true,
       },
     });
+  },
+  async getFrozenBalance(tx: Prisma.TransactionClient, walletId: number) {
+    const result = await tx.walletTransaction.aggregate({
+      where: { wallet_id: walletId, type: "withdrawal", status: "pending" },
+      _sum: { amount: true },
+    });
+    return result._sum.amount ?? new Decimal(0);
   },
   async getTransactionById(
     transactionId: number,

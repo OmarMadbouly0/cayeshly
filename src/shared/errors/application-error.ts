@@ -21,6 +21,12 @@ export class UnauthorizedError extends ApplicationError {
   }
 }
 
+export class PaymentRequiredError extends ApplicationError {
+  constructor(message: string) {
+    super(message, 402);
+  }
+}
+
 export class ForbiddenError extends ApplicationError {
   constructor(message = "Forbidden") {
     super(message, 403);

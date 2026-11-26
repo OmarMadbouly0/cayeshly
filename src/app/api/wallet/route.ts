@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   try {
     const user = await getCurrentUser(request);
     requireRole(user, "user");
-    const wallet = await walletService.getWalletByUserId(user.id);
+    const wallet = await walletService.getWalletSummary(user.id);
     return apiOk(wallet, 200);
   } catch (error) {
     return handleRouteError(error);
