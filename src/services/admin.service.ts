@@ -1,12 +1,22 @@
+import { adminRepository } from "@/repositories/admin.repository";
 import { walletRepository } from "@/repositories/wallet.repository";
 import {
   ConflictError,
   NotFoundError,
 } from "@/shared/errors/application-error";
-import { ReviewTransactionInput } from "./admin.schemas";
+import { pageResult } from "@/shared/pagination";
+import type {
+  ReviewTransactionInput,
+  TransactionListInput,
+} from "./admin.schemas";
 import { withTransaction } from "@/lib/prisma";
 
 export const adminService = {
+  async getTransactions(query: TransactionListInput) {
+    const { items, total } = await adminRepository.getTransactions(query);
+    return pageResult(items, total, query.page, query.pageSize);
+  },
+
   async reviewTransaction(
     transactionId: number,
     adminInput: ReviewTransactionInput,
@@ -22,18 +32,14 @@ export const adminService = {
         throw new NotFoundError("Transaction not found");
       }
 
-      // if a race condition occurs and that condition is not there ?
+      // what happened if a race condition occurs and that condition is not there ?
       if (transaction.status !== "pending") {
         throw new ConflictError("Only pending transactions can be reviewed.");
       }
 
       await walletRepository.lockWalletById(tx, transaction.wallet_id);
 
-      const wallet = await walletRepository.getWalletById(
-        transaction.wallet_id,
-        tx,
-      );
-      const updatedTransaction = await walletRepository.updateTransactionStatus(
+      const updatedTransaction = await adminRepository.updateTransactionStatus(
         tx,
         transactionId,
         adminInput.status,
@@ -48,9 +54,6 @@ export const adminService = {
         }
 
         if (transaction.type === "withdrawal") {
-          if (wallet!.balance.lt(transaction.amount)) {
-            throw new ConflictError("Insufficient wallet balance.");
-          }
           await walletRepository.debitBalance(
             tx,
             transaction.wallet_id,

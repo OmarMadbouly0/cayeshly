@@ -3,7 +3,6 @@ import { Decimal } from "@/generated/prisma/internal/prismaNamespace";
 import prisma from "@/lib/prisma";
 import { pageArgs } from "@/shared/pagination";
 import type { PaginationInput } from "@/shared/validation/pagination.schema";
-import type { WalletTransactionStatus } from "@/generated/prisma/enums";
 export const walletRepository = {
   async create(tx: Prisma.TransactionClient, userId: string) {
     return tx.wallet.create({
@@ -114,17 +113,6 @@ export const walletRepository = {
     });
   },
 
-  async updateTransactionStatus(
-    tx: Prisma.TransactionClient,
-    transactionId: number,
-    status: Exclude<WalletTransactionStatus, "pending">,
-  ) {
-    return tx.walletTransaction.update({
-      where: { id: transactionId, status: "pending" },
-      data: { status },
-    });
-  },
-
   async creditBalance(
     tx: Prisma.TransactionClient,
     walletId: number,
@@ -141,21 +129,12 @@ export const walletRepository = {
     walletId: number,
     amount: Decimal,
   ) {
-    return tx.wallet.updateMany({
+    return tx.wallet.update({
       where: {
         id: walletId,
         balance: { gte: amount },
       },
       data: { balance: { decrement: amount } },
-    });
-  },
-  async getWalletById(walletId: number, tx: Prisma.TransactionClient = prisma) {
-    return tx.wallet.findUnique({
-      where: { id: walletId },
-      select: {
-        id: true,
-        balance: true,
-      },
     });
   },
 };
