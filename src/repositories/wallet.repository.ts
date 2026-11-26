@@ -137,4 +137,18 @@ export const walletRepository = {
       data: { balance: { decrement: amount } },
     });
   },
+  async cancelTransaction(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    transactionId: number,
+  ) {
+    return tx.walletTransaction.update({
+      where: {
+        id: transactionId,
+        status: "pending",
+        wallet: { userId: userId },
+      },
+      data: { status: "canceled" },
+    });
+  },
 };

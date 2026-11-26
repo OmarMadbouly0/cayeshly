@@ -2,6 +2,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import prisma, { withTransaction } from "@/lib/prisma";
 import { walletRepository } from "@/repositories/wallet.repository";
 import {
+  ConflictError,
   NotFoundError,
   PaymentRequiredError,
 } from "@/shared/errors/application-error";
@@ -80,6 +81,22 @@ export const walletService = {
         "withdrawal",
         tx,
       );
+    });
+  },
+  async cancelTransaction(userId: string, transactionId: number) {
+    return withTransaction(async (tx) => {
+      await walletRepository.lockTransactionById(tx, transactionId);
+      const transaction = await walletRepository.getTransactionById(
+        transactionId,
+        tx,
+      );
+      if (!transaction) {
+        throw new NotFoundError("Transaction not found.");
+      }
+      if (transaction.status !== "pending") {
+        throw new ConflictError("Only pending transactions can be canceled.");
+      }
+      await walletRepository.cancelTransaction(tx, userId, transactionId);
     });
   },
 };
