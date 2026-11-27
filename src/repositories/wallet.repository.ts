@@ -49,7 +49,7 @@ export const walletRepository = {
     const where = { wallet_id: walletId };
     const { skip, take } = pageArgs(page, pageSize);
 
-    const [items, total] = await prisma.$transaction([
+    const [items, total] = await Promise.all([
       prisma.walletTransaction.findMany({
         where,
         skip,

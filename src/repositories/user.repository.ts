@@ -48,4 +48,20 @@ export const userRepository = {
       },
     });
   },
+
+  async findByIdWithPinHash(tx: Prisma.TransactionClient, userId: string) {
+    return tx.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        phoneNumber: true,
+        phoneNumberVerified: true,
+        onboarded: true,
+        pinHash: true,
+        pinFailedAttempts: true,
+        pinLockedUntil: true,
+      },
+    });
+  },
 };

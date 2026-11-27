@@ -8,7 +8,8 @@ import {
 } from "@/shared/errors/application-error";
 import { pageResult } from "@/shared/pagination";
 import type { PaginationInput } from "@/shared/validation/pagination.schema";
-import type { WalletAmountInput } from "./wallet.schemas";
+import type { WalletTransactionInput } from "@/services/wallet.schemas";
+import { requireTransactionPin } from "@/lib/pin";
 
 export const walletService = {
   async getWalletByUserId(
@@ -47,24 +48,29 @@ export const walletService = {
     return pageResult(items, total, pagination.page, pagination.pageSize);
   },
 
-  async walletDeposit(userId: string, input: WalletAmountInput) {
-    const wallet = await walletService.getWalletByUserId(userId);
-    if (!wallet) {
-      throw new NotFoundError("Wallet not found.");
-    }
-    const transaction = await walletRepository.createTransactionRequest(
-      wallet.id,
-      input.amount,
-      "deposit",
-      prisma,
-    );
+  async walletDeposit(userId: string, input: WalletTransactionInput) {
+    return withTransaction(async (tx) => {
+      const wallet = await walletService.getWalletByUserId(userId, tx);
+      if (!wallet) {
+        throw new NotFoundError("Wallet not found.");
+      }
+      await requireTransactionPin(userId, input.pin, tx);
 
-    return transaction;
+      const transaction = await walletRepository.createTransactionRequest(
+        wallet.id,
+        input.amount,
+        "deposit",
+        tx,
+      );
+
+      return transaction;
+    });
   },
 
-  async requestWithdrawal(userId: string, input: WalletAmountInput) {
+  async requestWithdrawal(userId: string, input: WalletTransactionInput) {
     const { id } = await walletService.getWalletByUserId(userId, prisma);
     return withTransaction(async (tx) => {
+      await requireTransactionPin(userId, input.pin, tx);
       await walletRepository.lockWalletById(tx, id);
       const wallet = await walletService.getWalletByUserId(userId, tx);
       const frozenBalance = await walletRepository.getFrozenBalance(

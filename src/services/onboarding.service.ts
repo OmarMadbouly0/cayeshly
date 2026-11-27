@@ -15,7 +15,7 @@ import { parseInput } from "@/shared/validation/parse-input";
 export const onboardingService = {
   async complete(userId: string, input: CompleteOnboardingInput) {
     const validatedInput = parseInput(completeOnboardingSchema, input);
-    const pinHash = await hashTransactionPin(validatedInput.transactionPin);
+    const pinHash = await hashTransactionPin(validatedInput.pin);
 
     return withTransaction(async (tx) => {
       await userRepository.lockById(tx, userId);

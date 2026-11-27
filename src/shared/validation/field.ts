@@ -106,3 +106,9 @@ export function phoneNumber(label: string) {
       `${label} must be a valid Egyptian phone number.`,
     );
 }
+
+export function transactionPin(label: string) {
+  return z
+    .string(`${label} is required.`)
+    .regex(/^[0-9]{6}$/, `${label} must contain exactly 6 digits.`);
+}
